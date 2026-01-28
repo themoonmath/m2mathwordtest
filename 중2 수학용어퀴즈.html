@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중2 수학 용어 맞추기</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        /* 시작 화면 스타일 */
+        #start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            text-align: right;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .question-box {
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            color: #2e7d32;
+            font-weight: bold;
+            word-break: keep-all;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        button {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #0b7dda;
+        }
+        #result-msg {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+        .correct { color: #2196F3; }
+        .wrong { color: #f44336; }
+        
+        /* 하단 정보 영역 */
+        .bottom-info {
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .player-name {
+            font-size: 1.1em;
+            color: #FF5722;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .footer {
+            font-weight: bold;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        #restart-btn {
+            background-color: #FF9800;
+        }
+        h2 {
+            word-break: keep-all;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>중2 수학 용어 맞추기</h1>
+
+        <!-- 1. 시작 화면 -->
+        <div id="start-screen">
+            <p>이름을 입력하고 시작하세요.</p>
+            <input type="text" id="username-input" placeholder="이름 입력" onkeyup="enterStart()">
+            <button onclick="startGame()">문제 풀기 시작</button>
+        </div>
+
+        <!-- 2. 퀴즈 영역 (초기 숨김) -->
+        <div id="quiz-area" class="hidden">
+            <div class="progress-text"><span id="current-num">1</span> / 13</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-box" id="question-text">
+                문제 로딩 중...
+            </div>
+
+            <input type="text" id="answer-input" placeholder="정답을 입력하세요" onkeyup="enterKey()">
+            <br>
+            <button onclick="checkAnswer()">확인</button>
+            <div id="result-msg"></div>
+        </div>
+
+        <!-- 3. 결과 화면 (초기 숨김) -->
+        <div id="finish-area" class="hidden">
+            <h2>중2 수학용어 마스터로 인정합니다.</h2>
+            <br>
+            <button id="restart-btn" onclick="location.reload()">다시 시작하기</button>
+        </div>
+
+        <!-- 하단 고정 정보 -->
+        <div class="bottom-info">
+            <div id="player-display" class="player-name hidden">도전자 : </div>
+            <div class="footer">
+                제작자 : 이천양정여자중학교 수학교사 문재윤
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 문제 데이터베이스
+        const data = [
+            { term: "유한소수", def: "소수점 아래 자릿수가 끝나는 소수" },
+            { term: "무한소수", def: "소수점 아래가 끝없이 계속 되는 소수" },
+            { term: "순환소수", def: "소수점 아래 일정한 숫자가 반복되는 소수" },
+            { term: "순환마디", def: "순환소수에서 반복되는 숫자 부분" },
+            { term: "일차부등식", def: "미지수의 지수가 1인 부등식" },
+            { term: "연립방정식", def: "여러 개의 방정식을 함께 풀어 미지수 값을 구하는 식" },
+            { term: "일차함수", def: "그래프가 직선인 차수가 1인 함수" },
+            { term: "기울기", def: "직선의 기울어진 정도를 수로 나타낸 값" },
+            { term: "x절편", def: "일차함수의 그래프가 x축과 만나는 점의 x좌표" },
+            { term: "y절편", def: "일차함수의 그래프가 y축과 만나는 점의 y좌표" },
+            { term: "평행이동", def: "도형이 위아래, 또는 좌우로 이동하는 것" },
+            { term: "직선의 방정식", def: "직선 위의 모든 점을 만족시키는 방정식" },
+            { term: "접선", def: "곡선과 한 점에서 접하는 직선" },
+            { term: "접점", def: "접선과 곡선이 만나는 한 점" },
+            { term: "외심", def: "삼각형의 세 변을 수직이등분선이 만나는 점" },
+            { term: "외접", def: "도형 바깥에서 둘러싸며 접하는 상태" },
+            { term: "외접원", def: "삼각형의 꼭짓점을 모두 지나는 원" },
+            { term: "내심", def: "삼각형의 세 각의 이등분선이 만나는 점" },
+            { term: "내접", def: "도형 안쪽에 맞닿으며 들어 있는 상태" },
+            { term: "내접원", def: "삼각형의 각 변에 접하는 원" },
+            { term: "중선", def: "삼각형에서 꼭짓점과 그 반대편 변의(대변) 의 중점을 잇는 선" },
+            { term: "무게중심", def: "삼각형의 세 중선이 만나는 점" },
+            { term: "닮음", def: "모양이 같고 크기만 다른 도형 관계" },
+            { term: "닮음비", def: "닮은 도형에서 대응하는 길이의 비율" },
+            { term: "피타고라스 정리", def: "직각삼각형에서 빗변의 제곱이 다른 두 변의 제곱의 합과 같다는 정리" },
+            { term: "확률", def: "어떤 사건이 일어날 가능성" }
+        ];
+
+        // 게임 상태 변수
+        let quizList = [];
+        let currentIndex = 0;
+        let wrongCount = 0;
+        const totalQuizCount = 13;
+
+        // 게임 시작 함수
+        function startGame() {
+            const nameInput = document.getElementById('username-input');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                alert('이름을 입력해주세요!');
+                return;
+            }
+
+            // 이름 표시
+            const playerDisplay = document.getElementById('player-display');
+            playerDisplay.innerText = "도전자 : " + name;
+            playerDisplay.classList.remove('hidden');
+
+            // 화면 전환
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-area').classList.remove('hidden');
+
+            // 문제 세팅
+            initQuizData();
+        }
+
+        // 시작 화면 엔터키 처리
+        function enterStart() {
+            if (window.event.keyCode == 13) {
+                startGame();
+            }
+        }
+
+        // 랜덤 문제 선정
+        function initQuizData() {
+            // 전체 데이터를 섞음
+            const shuffled = [...data].sort(() => 0.5 - Math.random());
+            // 13개만 추출
+            quizList = shuffled.slice(0, totalQuizCount);
+            showQuestion();
+        }
+
+        // 문제 표시 함수
+        function showQuestion() {
+            if (currentIndex >= totalQuizCount) {
+                endGame();
+                return;
+            }
+
+            // 화면 초기화
+            wrongCount = 0;
+            document.getElementById('answer-input').value = '';
+            document.getElementById('result-msg').innerHTML = '';
+            document.getElementById('answer-input').focus();
+
+            // 진행률 업데이트
+            document.getElementById('current-num').innerText = currentIndex + 1;
+            const progressPercent = ((currentIndex) / totalQuizCount) * 100;
+            document.getElementById('progress-bar').style.width = progressPercent + "%";
+
+            // 문제 텍스트 표시
+            document.getElementById('question-text').innerText = quizList[currentIndex].def;
+        }
+
+        // 정답 확인 함수
+        function checkAnswer() {
+            const userInput = document.getElementById('answer-input').value.trim().replace(/\s+/g, ''); // 공백 제거 후 비교
+            const correctAnswer = quizList[currentIndex].term.replace(/\s+/g, '');
+            const msgBox = document.getElementById('result-msg');
+
+            if (userInput === correctAnswer) {
+                // 정답 처리
+                msgBox.className = 'correct';
+                msgBox.innerText = '정답입니다.';
+                
+                // 잠시 후 다음 문제로
+                setTimeout(() => {
+                    currentIndex++;
+                    showQuestion();
+                }, 1000); // 1초 뒤 다음 문제
+            } else {
+                // 오답 처리
+                wrongCount++;
+                msgBox.className = 'wrong';
+
+                if (wrongCount >= 2) {
+                    msgBox.innerText = '모르겠으면 인터넷 검색해봐.';
+                } else {
+                    msgBox.innerText = '다시 한 번 생각해보세요.';
+                }
+                
+                // 입력창 초기화 및 포커스
+                document.getElementById('answer-input').select();
+            }
+        }
+
+        // 퀴즈 엔터키 입력 처리
+        function enterKey() {
+            if (window.event.keyCode == 13) {
+                checkAnswer();
+            }
+        }
+
+        // 게임 종료 함수
+        function endGame() {
+            document.getElementById('quiz-area').classList.add('hidden');
+            document.getElementById('finish-area').classList.remove('hidden');
+            // 진행률 100% 채우기 시각적 효과
+            document.getElementById('progress-bar').style.width = "100%";
+        }
+    </script>
+</body>
+</html>
