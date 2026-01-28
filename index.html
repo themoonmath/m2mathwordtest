@@ -30,14 +30,12 @@
             color: #333;
             margin-bottom: 20px;
         }
-        /* 시작 화면 스타일 */
         #start-screen {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
         }
-        
         .progress-container {
             width: 100%;
             background-color: #ddd;
@@ -97,7 +95,6 @@
         .correct { color: #2196F3; }
         .wrong { color: #f44336; }
         
-        /* 하단 정보 영역 */
         .bottom-info {
             margin-top: 40px;
             border-top: 1px solid #eee;
@@ -114,7 +111,6 @@
             color: #555;
             font-size: 0.9em;
         }
-
         .hidden {
             display: none !important;
         }
@@ -139,7 +135,7 @@
             <button onclick="startGame()">문제 풀기 시작</button>
         </div>
 
-        <!-- 2. 퀴즈 영역 (초기 숨김) -->
+        <!-- 2. 퀴즈 영역 -->
         <div id="quiz-area" class="hidden">
             <div class="progress-text"><span id="current-num">1</span> / 13</div>
             <div class="progress-container">
@@ -156,14 +152,14 @@
             <div id="result-msg"></div>
         </div>
 
-        <!-- 3. 결과 화면 (초기 숨김) -->
+        <!-- 3. 결과 화면 -->
         <div id="finish-area" class="hidden">
             <h2>중2 수학용어 마스터로 인정합니다.</h2>
+            <p id="saving-text" style="color:blue; font-size:0.8em; margin-top:5px;">(기록 저장 중...)</p>
             <br>
             <button id="restart-btn" onclick="location.reload()">다시 시작하기</button>
         </div>
 
-        <!-- 하단 고정 정보 -->
         <div class="bottom-info">
             <div id="player-display" class="player-name hidden">도전자 : </div>
             <div class="footer">
@@ -173,7 +169,12 @@
     </div>
 
     <script>
-        // 문제 데이터베이스
+        // ==========================================
+        // 여기에 복사한 구글 앱스 스크립트 URL을 넣으세요!
+        // 예: const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby14f0KInK8n_l2oi7s9zRxJz43DldpTsOvLwpH76qS2B3bZnuGr9nGSntLyW4dAfR5/exec"; 
+        // ==========================================
+
         const data = [
             { term: "유한소수", def: "소수점 아래 자릿수가 끝나는 소수" },
             { term: "무한소수", def: "소수점 아래가 끝없이 계속 되는 소수" },
@@ -203,118 +204,116 @@
             { term: "확률", def: "어떤 사건이 일어날 가능성" }
         ];
 
-        // 게임 상태 변수
         let quizList = [];
         let currentIndex = 0;
         let wrongCount = 0;
+        let totalWrongAttempts = 0; // 전체 오답 횟수 누적
+        let currentPlayerName = "";
         const totalQuizCount = 13;
 
-        // 게임 시작 함수
         function startGame() {
             const nameInput = document.getElementById('username-input');
-            const name = nameInput.value.trim();
+            currentPlayerName = nameInput.value.trim();
 
-            if (!name) {
+            if (!currentPlayerName) {
                 alert('이름을 입력해주세요!');
                 return;
             }
 
-            // 이름 표시
-            const playerDisplay = document.getElementById('player-display');
-            playerDisplay.innerText = "도전자 : " + name;
-            playerDisplay.classList.remove('hidden');
-
-            // 화면 전환
+            document.getElementById('player-display').innerText = "도전자 : " + currentPlayerName;
+            document.getElementById('player-display').classList.remove('hidden');
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('quiz-area').classList.remove('hidden');
 
-            // 문제 세팅
             initQuizData();
         }
 
-        // 시작 화면 엔터키 처리
         function enterStart() {
             if (window.event.keyCode == 13) {
                 startGame();
             }
         }
 
-        // 랜덤 문제 선정
         function initQuizData() {
-            // 전체 데이터를 섞음
             const shuffled = [...data].sort(() => 0.5 - Math.random());
-            // 13개만 추출
             quizList = shuffled.slice(0, totalQuizCount);
             showQuestion();
         }
 
-        // 문제 표시 함수
         function showQuestion() {
             if (currentIndex >= totalQuizCount) {
                 endGame();
                 return;
             }
 
-            // 화면 초기화
             wrongCount = 0;
             document.getElementById('answer-input').value = '';
             document.getElementById('result-msg').innerHTML = '';
             document.getElementById('answer-input').focus();
-
-            // 진행률 업데이트
             document.getElementById('current-num').innerText = currentIndex + 1;
             const progressPercent = ((currentIndex) / totalQuizCount) * 100;
             document.getElementById('progress-bar').style.width = progressPercent + "%";
-
-            // 문제 텍스트 표시
             document.getElementById('question-text').innerText = quizList[currentIndex].def;
         }
 
-        // 정답 확인 함수
         function checkAnswer() {
-            const userInput = document.getElementById('answer-input').value.trim().replace(/\s+/g, ''); // 공백 제거 후 비교
+            const userInput = document.getElementById('answer-input').value.trim().replace(/\s+/g, '');
             const correctAnswer = quizList[currentIndex].term.replace(/\s+/g, '');
             const msgBox = document.getElementById('result-msg');
 
             if (userInput === correctAnswer) {
-                // 정답 처리
                 msgBox.className = 'correct';
                 msgBox.innerText = '정답입니다.';
-                
-                // 잠시 후 다음 문제로
                 setTimeout(() => {
                     currentIndex++;
                     showQuestion();
-                }, 1000); // 1초 뒤 다음 문제
+                }, 1000);
             } else {
-                // 오답 처리
                 wrongCount++;
+                totalWrongAttempts++; // 전체 틀린 횟수 증가
                 msgBox.className = 'wrong';
-
                 if (wrongCount >= 2) {
                     msgBox.innerText = '모르겠으면 인터넷 검색해봐.';
                 } else {
                     msgBox.innerText = '다시 한 번 생각해보세요.';
                 }
-                
-                // 입력창 초기화 및 포커스
                 document.getElementById('answer-input').select();
             }
         }
 
-        // 퀴즈 엔터키 입력 처리
         function enterKey() {
             if (window.event.keyCode == 13) {
                 checkAnswer();
             }
         }
 
-        // 게임 종료 함수
         function endGame() {
             document.getElementById('quiz-area').classList.add('hidden');
             document.getElementById('finish-area').classList.remove('hidden');
-            // 진행률 100% 채우기 시각적 효과
             document.getElementById('progress-bar').style.width = "100%";
+
+            // 구글 시트로 데이터 전송
+            sendDataToSheet();
+        }
+
+        function sendDataToSheet() {
+            if (SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL") {
+                document.getElementById('saving-text').innerText = "스크립트 URL이 설정되지 않았습니다.";
+                return;
+            }
+
+            // '13문제 통과 (오답 n회)' 형식으로 저장
+            const finalResult = `13문제 통과 (총 오답 ${totalWrongAttempts}회)`;
+            const url = `${SCRIPT_URL}?name=${encodeURIComponent(currentPlayerName)}&result=${encodeURIComponent(finalResult)}`;
+
+            fetch(url)
+                .then(response => {
+                    document.getElementById('saving-text').innerText = "(기록 저장 완료!)";
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('saving-text').innerText = "(저장 실패)";
+                });
         }
     </script>
 </body>
